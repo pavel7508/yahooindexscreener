@@ -107,3 +107,13 @@ all_tickers = list(dict.fromkeys(
     + macro_tickers
 ))
 
+
+# Display names used by the frontend; stored group names stay unchanged.
+group_display_names = {
+    "Hlavní indexy": "Indices",
+    "Tržní ETF": "Market ETF",
+    "Sektorová ETF": "Sector ETF",
+    "Měny": "Forex",
+    "Komodity": "Commodities",
+    "Dluhopisy": "Bonds",
+}

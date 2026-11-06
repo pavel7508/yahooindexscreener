@@ -1,9 +1,11 @@
+from html import escape
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import pandas as pd
 import streamlit as st
 from backend.service import load_snapshot, update_snapshot
 from backend.settings import GROUPS
+from configfrontend import etf_descriptions
 
 st.set_page_config(page_title="Market Check", page_icon="📊", layout="wide")
 st.title("Market Check")
@@ -38,17 +40,62 @@ shown = table[table["Skupina"].isin(selected)].copy()
 for col in ("Poslední cena", "1D %", "3D %", "5D %"):
     shown[col] = pd.to_numeric(shown[col], errors="coerce")
 
+
+sort_column_control, sort_direction_control = st.columns([2, 1])
+with sort_column_control:
+    sort_column = st.selectbox(
+        "Řadit podle", ["Původní pořadí", *shown.columns], key="sort_column"
+    )
+with sort_direction_control:
+    sort_direction = st.selectbox(
+        "Směr řazení", ["Vzestupně", "Sestupně"],
+        key="sort_direction", disabled=sort_column == "Původní pořadí",
+    )
+if sort_column != "Původní pořadí":
+    shown = shown.sort_values(
+        sort_column, ascending=sort_direction == "Vzestupně",
+        na_position="last", kind="stable",
+    )
+
 def color_change(value):
     if pd.isna(value) or value == 0:
         return ""
     return "color: #4ade80" if value > 0 else "color: #fb7185"
 
-styled = shown.style.map(color_change, subset=["1D %", "3D %", "5D %"])
-st.dataframe(styled, hide_index=True, use_container_width=True, height=650,
-    column_config={
-        "Poslední cena": st.column_config.NumberColumn(format="%.4f"),
-        **{f"{n}D %": st.column_config.NumberColumn(format="%.2f %%") for n in (1, 3, 5)},
-    })
+def ticker_with_tooltip(ticker):
+    label = escape(str(ticker))
+    description = etf_descriptions.get(ticker)
+    if description is None:
+        return label
+    return f'<span title="{escape(description, quote=True)}" style="cursor: help">{label}</span>'
+
+
+# st.dataframe does not render per-cell HTML tooltips.
+# Escape table values before inserting the trusted tooltip markup.
+styled = (
+    shown.style
+    .map(color_change, subset=["1D %", "3D %", "5D %"])
+    .format({"Ticker": ticker_with_tooltip,
+             "Poslední cena": "{:.4f}",
+             **{f"{n}D %": "{:.2f} %" for n in (1, 3, 5)}}, escape="html", na_rep="")
+    .hide(axis="index")
+    .set_table_attributes('class="market-table"')
+)
+st.html(
+    """<style>
+    .market-table-scroll { max-height: 650px; overflow: auto; }
+    .market-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .market-table th, .market-table td {
+        padding: 8px 12px; text-align: left; white-space: nowrap;
+        border-bottom: 1px solid var(--border-color, #80808040);
+    }
+    .market-table thead th {
+        position: sticky; top: 0;
+        background: var(--background-color, #0e1117); z-index: 1;
+    }
+    </style>"""
+    + '<div class="market-table-scroll">' + styled.to_html() + '</div>'
+)
 if (shown["Stav"] != "OK").any():
     st.warning("Některá data chybí nebo jsou starší. Zkontroluj sloupce Datum dat a Stav.")
 st.caption("Výnosy dluhopisů jsou hodnoty Yahoo; jejich změny zde znamenají relativní %, nikoli bazické body. "

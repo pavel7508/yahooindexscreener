@@ -45,6 +45,38 @@ market_etfs = [
     "RSP",   # S&P 500 Equal Weight
 ]
 
+# Popisy ETF podle koment??? u jednotliv?ch seznam?.
+etf_descriptions = {
+    "XLK": "Technology",
+    "XLF": "Financials",
+    "XLE": "Energy",
+    "XLV": "Health Care",
+    "XLI": "Industrials",
+    "XLY": "Consumer Discretionary",
+    "XLP": "Consumer Staples",
+    "XLC": "Communication Services",
+    "XLU": "Utilities",
+    "XLB": "Materials",
+    "XLRE": "Real Estate",
+    "SMH": "Semiconductors",
+    "SOXX": "Semiconductors",
+    "XRT": "Retail",
+    "XHB": "Homebuilders",
+    "XBI": "Biotechnology",
+    "IBB": "Biotechnology",
+    "KRE": "Regional Banks",
+    "XOP": "Oil & Gas Exploration",
+    "OIH": "Oil Services",
+    "ITA": "Aerospace & Defense",
+    "IGV": "Software",
+    "HACK": "Cybersecurity",
+    "SPY": "S&P 500",
+    "QQQ": "Nasdaq 100",
+    "DIA": "Dow Jones",
+    "IWM": "Russell 2000",
+    "RSP": "S&P 500 Equal Weight",
+}
+
 market_indices = [
     "^GSPC",  # S&P 500
     "^NDX",   # Nasdaq 100

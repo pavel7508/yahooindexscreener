@@ -1,0 +1,37 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+html, body { margin: 0; padding: 0; width: 100%; }
+body { color: var(--text-color, #fafafa); font-family: sans-serif; }
+#table-root { width: 100%; min-width: 0; }
+</style></head><body><div id="table-root"></div><script>
+const root = document.getElementById("table-root");
+function send(type, data = {}) {
+  window.parent.postMessage({isStreamlitMessage: true, type, ...data}, "*");
+}
+function resize() {
+  send("streamlit:setFrameHeight", {height: Math.ceil(root.getBoundingClientRect().height) + 2});
+}
+window.addEventListener("message", event => {
+  if (event.source !== window.parent || event.data.type !== "streamlit:render") return;
+  const {args, theme} = event.data;
+  if (theme) {
+    document.documentElement.style.setProperty("--text-color", theme.textColor);
+    document.documentElement.style.setProperty("--background-color", theme.backgroundColor);
+    document.documentElement.style.setProperty("--primary-color", theme.primaryColor);
+    document.body.style.fontFamily = theme.font;
+  }
+  // HTML is generated and escaped by our Python renderer, never accepted as user input.
+  root.innerHTML = args.html;
+  resize();
+});
+root.addEventListener("click", event => {
+  const button = event.target.closest("button[data-remove]");
+  if (!button) return;
+  button.disabled = true;
+  send("streamlit:setComponentValue", {
+    value: {ticker: button.dataset.remove, event_id: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2)}, dataType: "json"
+  });
+});
+new ResizeObserver(resize).observe(root);
+send("streamlit:componentReady", {apiVersion: 1});
+</script></body></html>

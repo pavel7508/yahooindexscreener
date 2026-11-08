@@ -1,0 +1,44 @@
+<!doctype html>
+<html><head><meta charset="utf-8"></head><body>
+<script>
+const storageKey = "marketcheck.watchlist.v1";
+let loaded = false;
+let lastReport = "";
+function send(type, data = {}) {
+  window.parent.postMessage({isStreamlitMessage: true, type, ...data}, "*");
+}
+function report(items, error) {
+  const value = {items, error};
+  const serialized = JSON.stringify(value);
+  if (serialized !== lastReport) {
+    lastReport = serialized;
+    send("streamlit:setComponentValue", {value, dataType: "json"});
+  }
+}
+window.addEventListener("message", event => {
+  if (event.source !== window.parent || event.data.type !== "streamlit:render") return;
+  const desired = event.data.args.items;
+  if (!loaded) {
+    loaded = true;
+    let items = [];
+    let error = null;
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) || "[]");
+      if (Array.isArray(saved)) items = saved;
+      else error = "Uložený seznam má neplatný formát.";
+    } catch (_) { error = "Seznam nelze načíst z úložiště prohlížeče."; }
+    report(items, error);
+  }
+  if (Array.isArray(desired)) {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(desired));
+      report(desired, null);
+    } catch (_) {
+      report(desired, "Prohlížeč nepovolil uložení. Seznam zůstane jen v této relaci.");
+    }
+  }
+  send("streamlit:setFrameHeight", {height: 0});
+});
+send("streamlit:componentReady", {apiVersion: 1});
+send("streamlit:setFrameHeight", {height: 0});
+</script></body></html>

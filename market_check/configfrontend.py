@@ -45,7 +45,7 @@ market_etfs = [
     "RSP",   # S&P 500 Equal Weight
 ]
 
-# Popisy ETF podle koment??? u jednotliv?ch seznam?.
+# Descriptions for all ETF, index and macro tickers.
 etf_descriptions = {
     "XLK": "Technology",
     "XLF": "Financials",
@@ -75,6 +75,21 @@ etf_descriptions = {
     "DIA": "Dow Jones",
     "IWM": "Russell 2000",
     "RSP": "S&P 500 Equal Weight",
+    "^GSPC": "S&P 500",
+    "^NDX": "Nasdaq 100",
+    "^DJI": "Dow Jones",
+    "^RUT": "Russell 2000",
+    "^SOX": "Philadelphia Semiconductor Index",
+    "^VIX": "VIX – volatilita",
+    "^TNX": "US 10Y Treasury Yield",
+    "^TYX": "US 30Y Treasury Yield",
+    "^FVX": "US 5Y Treasury Yield",
+    "DX-Y.NYB": "US Dollar Index (DXY)",
+    "JPY=X": "USD/JPY",
+    "EURUSD=X": "EUR/USD",
+    "CL=F": "WTI Crude Oil",
+    "BZ=F": "Brent Crude Oil",
+    "GC=F": "Gold Futures",
 }
 
 market_indices = [

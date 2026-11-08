@@ -6,10 +6,13 @@ import streamlit as st
 from backend.service import load_snapshot, update_snapshot
 from backend.settings import GROUPS
 from configfrontend import etf_descriptions, group_display_names
+from watchlist_ui import render_watchlist
 
 st.set_page_config(page_title="Market Check", page_icon="📊", layout="wide")
 st.title("Market Check")
 st.caption("Rychlý přehled indexů, sektorů a makra · Yahoo Finance")
+render_watchlist()
+st.subheader("Přehled trhu")
 try:
     snapshot = load_snapshot()
 except (ValueError, OSError, KeyError) as exc:
@@ -28,7 +31,7 @@ selected = st.sidebar.multiselect(
     "Zobrazit skupiny", list(GROUPS), default=list(GROUPS),
     format_func=lambda group: group_display_names.get(group, group),
 )
-st.sidebar.caption("Při otevření ani změně filtru se nic nestahuje.")
+st.sidebar.caption("Přehled trhu používá uložená data; změna filtru nic nestahuje.")
 if snapshot is None:
     st.info("Pro první načtení klikni na Aktualizovat data.")
     st.stop()

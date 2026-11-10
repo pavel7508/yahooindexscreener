@@ -3,8 +3,42 @@
 html, body { margin: 0; padding: 0; width: 100%; }
 body { color: var(--text-color, #fafafa); font-family: sans-serif; }
 #table-root { width: 100%; min-width: 0; }
+button[data-open] { touch-action: manipulation; }
+@media (pointer: coarse) {
+  button[data-open] { min-width: 44px; min-height: 44px; }
+}
 </style></head><body><div id="table-root"></div><script>
 const root = document.getElementById("table-root");
+let readyTimer = null;
+let currentHtml = null;
+let touchStart = null;
+let lastTouchOpen = null;
+let scrollToken = null;
+let scrollObserver = null;
+let scrollTimer = null;
+function scrollToDetail(request) {
+  if (!request || request.token === scrollToken) return;
+  // The v1 component is served from the app's origin. Only use our explicit
+  // heading anchor, never Streamlit's private DOM structure.
+  let doc;
+  try { doc = window.parent.document; } catch (_) { return; }
+  if (scrollObserver) scrollObserver.disconnect();
+  clearTimeout(scrollTimer);
+  function scroll() {
+    const target = doc.getElementById(request.anchor);
+    if (!target) return false;
+    target.scrollIntoView({block: "start", behavior: "auto"});
+    scrollToken = request.token;
+    if (scrollObserver) scrollObserver.disconnect();
+    clearTimeout(scrollTimer);
+    return true;
+  }
+  if (scroll()) return;
+  // The component may render before Python has emitted the detail heading.
+  scrollObserver = new MutationObserver(scroll);
+  scrollObserver.observe(doc.body, {childList: true, subtree: true});
+  scrollTimer = setTimeout(() => scrollObserver.disconnect(), 15000);
+}
 function send(type, data = {}) {
   window.parent.postMessage({isStreamlitMessage: true, type, ...data}, "*");
 }
@@ -13,6 +47,7 @@ function resize() {
 }
 window.addEventListener("message", event => {
   if (event.source !== window.parent || event.data.type !== "streamlit:render") return;
+  clearInterval(readyTimer);
   const {args, theme} = event.data;
   if (theme) {
     document.documentElement.style.setProperty("--text-color", theme.textColor);
@@ -21,17 +56,70 @@ window.addEventListener("message", event => {
     document.body.style.fontFamily = theme.font;
   }
   // HTML is generated and escaped by our Python renderer, never accepted as user input.
-  root.innerHTML = args.html;
+  if (args.html !== currentHtml) {
+    root.innerHTML = args.html;
+    currentHtml = args.html;
+  }
   resize();
+  scrollToDetail(args.scroll_to);
 });
-root.addEventListener("click", event => {
-  const button = event.target.closest("button[data-remove], button[data-open], button[data-add]");
-  if (!button) return;
-  button.disabled = true;
+function actionButton(target) {
+  return target instanceof Element
+    ? target.closest("button[data-remove], button[data-open], button[data-add]") : null;
+}
+function activate(button, touch = false) {
+  if (button.disabled) return;
+  // Keep ETF links usable after a failed request; add/remove keep their existing behavior.
+  if (!button.hasAttribute("data-open")) button.disabled = true;
   send("streamlit:setComponentValue", {
-    value: {ticker: button.dataset.remove || button.dataset.open || button.dataset.add, action: button.hasAttribute("data-open") ? "open" : button.hasAttribute("data-add") ? "add" : "remove", event_id: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2)}, dataType: "json"
+    value: {ticker: button.dataset.remove || button.dataset.open || button.dataset.add,
+      action: button.hasAttribute("data-open") ? "open" : button.hasAttribute("data-add") ? "add" : "remove",
+      mobile: touch || window.matchMedia("(max-width: 768px)").matches,
+      event_id: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2)}, dataType: "json"
   });
+}
+root.addEventListener("touchstart", event => {
+  touchStart = null;
+  const button = actionButton(event.target);
+  if (!button || !button.hasAttribute("data-open") || event.touches.length !== 1) return;
+  const point = event.touches[0];
+  const scroller = button.closest(".market-table-scroll");
+  touchStart = {button, x: point.clientX, y: point.clientY, moved: false,
+    scroller, left: scroller ? scroller.scrollLeft : 0, top: scroller ? scroller.scrollTop : 0};
+}, {passive: true});
+root.addEventListener("touchmove", event => {
+  if (!touchStart) return;
+  const point = event.touches[0];
+  if (event.touches.length !== 1 || Math.hypot(point.clientX-touchStart.x, point.clientY-touchStart.y) > 10) {
+    touchStart.moved = true;
+  }
+}, {passive: true});
+root.addEventListener("touchcancel", () => { touchStart = null; });
+root.addEventListener("touchend", event => {
+  const start = touchStart;
+  touchStart = null;
+  if (!start || start.moved || event.touches.length || !root.contains(start.button)) return;
+  const point = event.changedTouches[0];
+  if (!point || Math.hypot(point.clientX-start.x, point.clientY-start.y) > 10) return;
+  if (start.scroller && (start.scroller.scrollLeft !== start.left || start.scroller.scrollTop !== start.top)) return;
+  // Avoid a second activation from the compatibility mouse click on mobile Safari.
+  event.preventDefault();
+  lastTouchOpen = {ticker: start.button.dataset.open, time: Date.now()};
+  activate(start.button, true);
+}, {passive: false});
+root.addEventListener("click", event => {
+  const button = actionButton(event.target);
+  if (!button) return;
+  if (event.detail !== 0 && lastTouchOpen && button.dataset.open === lastTouchOpen.ticker
+      && Date.now() - lastTouchOpen.time < 800) {
+    event.preventDefault();
+    return;
+  }
+  activate(button);
 });
 new ResizeObserver(resize).observe(root);
 send("streamlit:componentReady", {apiVersion: 1});
+// A remounted iframe can load before Streamlit has registered its instance.
+// Retry only until the first render acknowledges the handshake.
+readyTimer = setInterval(() => send("streamlit:componentReady", {apiVersion: 1}), 250);
 </script></body></html>

@@ -26,7 +26,7 @@ def render_etf_detail():
     ticker = st.session_state.get("selected_etf")
     if not ticker:
         return
-    st.subheader(f"{ticker} · Top 25 pozic")
+    st.subheader(f"{ticker} · Top 25 pozic", anchor="etf-holdings-detail")
     if st.button("Zavřít detail", key="close_etf_detail"):
         st.session_state.selected_etf = None
         st.rerun()

@@ -14,6 +14,9 @@ st.set_page_config(page_title="Market Check", page_icon="📊", layout="wide")
 st.title("Market Check")
 st.caption("Rychlý přehled indexů, sektorů a makra · Yahoo Finance")
 render_watchlist()
+# Keep the market iframe in a stable layout during the browser-store handshake.
+if "watch_tickers" not in st.session_state:
+    st.stop()
 st.subheader("Přehled trhu")
 try:
     snapshot = load_snapshot()
@@ -100,11 +103,15 @@ styled = (
 event = _watch_table(
     html=TABLE_CSS + '<div class="market-table-scroll">' + styled.to_html() + '</div>',
     key="market_table", default=None,
+    scroll_to=({"anchor": "etf-holdings-detail", "token": st.session_state.get("etf_scroll_request")}
+               if st.session_state.get("selected_etf") and st.session_state.get("etf_scroll_request") else None),
 )
 if isinstance(event, dict) and event.get("event_id") != st.session_state.get("market_open_event"):
     st.session_state.market_open_event = event.get("event_id")
     if event.get("action") == "open" and event.get("ticker") in sector_etfs + industry_etfs:
         st.session_state.selected_etf = event["ticker"]
+        st.session_state.etf_scroll_request = event["event_id"] if event.get("mobile") else None
+        st.rerun()
 render_etf_detail()
 if (shown["Stav"] != "OK").any():
     st.warning("Některá data chybí nebo jsou starší. Zkontroluj sloupce Datum dat a Stav.")

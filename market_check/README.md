@@ -76,3 +76,19 @@ Ceny mají sdílenou paměťovou cache 15 minut pro každý symbol. Tlačítko
 Neúspěšná načtení mají stav ve sloupci Stav; pokud v relaci existuje starší úspěšná
 hodnota, zůstane viditelná a jasně označená. Ticker vyřazený z katalogu se ze seznamu
 sám nesmaže. Pro funkci je potřebný přístup k Nasdaq Trader a Yahoo Finance.
+
+## Detail sektorových a oborových ETF
+
+Kliknutí na podtržený ticker v přehledu trhu otevře jediný panel **Top 25 pozic**.
+Výběr dalšího ETF stávající panel nahradí; tlačítko **Zavřít detail** jej skryje.
+Detail zobrazuje původní váhy v ETF, datum složení, součet zobrazených vah a stejné
+1D/3D/5D cenové změny jako zbytek aplikace. Pozice lze řadit a pomocí **＋** přidat
+do vlastního watchlistu. Již přidané pozice mají **✓**. Přidávání je dostupné pro
+instrumenty v katalogu a respektuje limit watchlistu.
+
+Složení se načítá až po kliknutí z exportů správců (State Street, iShares, VanEck,
+Amplify); úspěšné načtení se cachuje 24 hodin. Neúspěšné pokusy se necachují. Při nedostupném zdroji nebo neplatném souboru se
+zobrazí **Složení ETF není dostupné.** Bez náhradních datových zdrojů.
+Pro čtení excelových exportů je v `requirements.txt` přidaný `openpyxl`.
+
+Pokud chybí knihovna `openpyxl`, detail zobrazí samostatnou chybu s příkazem pro aktualizaci závislostí, nikoli hlášku o nedostupném zdroji.

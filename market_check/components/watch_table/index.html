@@ -25,11 +25,11 @@ window.addEventListener("message", event => {
   resize();
 });
 root.addEventListener("click", event => {
-  const button = event.target.closest("button[data-remove]");
+  const button = event.target.closest("button[data-remove], button[data-open], button[data-add]");
   if (!button) return;
   button.disabled = true;
   send("streamlit:setComponentValue", {
-    value: {ticker: button.dataset.remove, event_id: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2)}, dataType: "json"
+    value: {ticker: button.dataset.remove || button.dataset.open || button.dataset.add, action: button.hasAttribute("data-open") ? "open" : button.hasAttribute("data-add") ? "add" : "remove", event_id: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2)}, dataType: "json"
   });
 });
 new ResizeObserver(resize).observe(root);

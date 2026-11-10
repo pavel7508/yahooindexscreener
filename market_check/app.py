@@ -6,7 +6,9 @@ import streamlit as st
 from backend.service import load_snapshot, update_snapshot
 from backend.settings import GROUPS
 from configfrontend import etf_descriptions, group_display_names
-from watchlist_ui import render_watchlist
+from watchlist_ui import render_watchlist, _watch_table, TABLE_CSS
+from etf_ui import render_etf_detail
+from configfrontend import sector_etfs, industry_etfs
 
 st.set_page_config(page_title="Market Check", page_icon="📊", layout="wide")
 st.title("Market Check")
@@ -77,6 +79,10 @@ def ticker_with_tooltip(ticker):
     description = etf_descriptions.get(ticker)
     if description is None:
         return label
+    if ticker in sector_etfs or ticker in industry_etfs:
+        return (f'<button type="button" data-open="{label}" title="{escape(description, quote=True)}" '
+                f'aria-label="Zobrazit složení {label}" style="font:inherit;color:inherit;cursor:pointer;'
+                f'background:none;border:0;padding:0;text-decoration:underline">{label}</button>')
     return f'<span title="{escape(description, quote=True)}" style="cursor: help">{label}</span>'
 
 
@@ -91,34 +97,15 @@ styled = (
     .hide(axis="index")
     .set_table_attributes('class="market-table"')
 )
-st.html(
-    """<style>
-    .market-table-scroll {
-        width: 100%; max-width: 100%; min-width: 0;
-        box-sizing: border-box;
-        max-height: 650px; overflow-x: auto; overflow-y: auto;
-    }
-    .market-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    .market-table th, .market-table td {
-        padding: 8px 12px; text-align: left; white-space: nowrap;
-        border-bottom: 1px solid var(--border-color, #80808040);
-    }
-    .market-table thead th {
-        position: sticky; top: 0;
-        background: var(--background-color, #0e1117); z-index: 1;
-    }
-    @media (max-width: 768px) {
-        /* Keep the table's intrinsic width inside its own scroll area. */
-        .market-table-scroll {
-            contain: inline-size;
-            -webkit-overflow-scrolling: touch;
-        }
-        .market-table { width: max-content; min-width: 100%; }
-        .market-table th, .market-table td { padding: 6px 4px; }
-    }
-    </style>"""
-    + '<div class="market-table-scroll">' + styled.to_html() + '</div>'
+event = _watch_table(
+    html=TABLE_CSS + '<div class="market-table-scroll">' + styled.to_html() + '</div>',
+    key="market_table", default=None,
 )
+if isinstance(event, dict) and event.get("event_id") != st.session_state.get("market_open_event"):
+    st.session_state.market_open_event = event.get("event_id")
+    if event.get("action") == "open" and event.get("ticker") in sector_etfs + industry_etfs:
+        st.session_state.selected_etf = event["ticker"]
+render_etf_detail()
 if (shown["Stav"] != "OK").any():
     st.warning("Některá data chybí nebo jsou starší. Zkontroluj sloupce Datum dat a Stav.")
 st.caption("Výnosy dluhopisů jsou hodnoty Yahoo; jejich změny zde znamenají relativní %, nikoli bazické body. "

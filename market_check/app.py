@@ -5,7 +5,7 @@ import pandas as pd
 import streamlit as st
 from backend.service import load_snapshot, update_snapshot
 from backend.settings import GROUPS
-from configfrontend import etf_descriptions, group_display_names
+from configfrontend import etf_descriptions, group_display_names, ticker_display_names
 from watchlist_ui import render_watchlist, _watch_table, TABLE_CSS
 from etf_ui import render_etf_detail
 from configfrontend import sector_etfs, industry_etfs
@@ -78,6 +78,9 @@ def color_change(value):
     return "color: #4ade80" if value > 0 else "color: #fb7185"
 
 def ticker_with_tooltip(ticker):
+    if ticker in ticker_display_names:
+        title = escape(f"{ticker} · {etf_descriptions.get(ticker, '')}", quote=True)
+        return f'<span title="{title}" style="cursor: help">{escape(ticker_display_names[ticker])}</span>'
     label = escape(str(ticker))
     description = etf_descriptions.get(ticker)
     if description is None:

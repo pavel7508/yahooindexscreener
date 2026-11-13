@@ -132,3 +132,6 @@ group_display_names = {
     "Komodity": "Commodities",
     "Dluhopisy": "Bonds",
 }
+
+# Labels for display only; Yahoo symbols remain unchanged.
+ticker_display_names = {'SPY': 'S&P 500 ETF', 'QQQ': 'Nasdaq 100 ETF', 'DIA': 'Dow Jones ETF', 'IWM': 'Russell 2000 ETF', 'RSP': 'S&P 500 Equal Weight ETF', '^GSPC': 'S&P 500', '^NDX': 'Nasdaq 100', '^DJI': 'Dow Jones', '^RUT': 'Russell 2000', '^SOX': 'Philadelphia Semiconductor', '^VIX': 'VIX', '^TNX': 'US10Y', '^TYX': 'US30Y', '^FVX': 'US5Y', 'DX-Y.NYB': 'DXY', 'JPY=X': 'USD/JPY', 'EURUSD=X': 'EUR/USD', 'CL=F': 'WTI', 'BZ=F': 'Brent', 'GC=F': 'Zlato'}

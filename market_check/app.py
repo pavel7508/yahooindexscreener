@@ -5,7 +5,11 @@ import pandas as pd
 import streamlit as st
 from backend.service import load_snapshot, update_snapshot
 from backend.settings import GROUPS
-from configfrontend import etf_descriptions, group_display_names, ticker_display_names
+import configfrontend as frontend_config
+from configfrontend import etf_descriptions, group_display_names
+
+# Allow startup with an older deployed config; use symbols until labels are available.
+ticker_display_names = getattr(frontend_config, "ticker_display_names", {})
 from watchlist_ui import render_watchlist, _watch_table, TABLE_CSS
 from etf_ui import render_etf_detail
 from configfrontend import sector_etfs, industry_etfs
